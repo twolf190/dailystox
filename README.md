@@ -9,9 +9,36 @@ Double-click `start.bat`.
 The startup script:
 
 1. Moves into this project folder.
-2. Runs `git pull --ff-only` when the folder is connected to a git repository.
+2. Runs `git pull --ff-only` for the currently checked-out branch when that branch has an upstream.
 3. Starts the local Node server.
 4. Opens the app in your browser.
+
+## Stop the server
+
+Double-click `stop-dailystox.bat`.
+
+This stops the saved DailyStox server process and anything still listening on port `5177`.
+
+## Test branches
+
+`start.bat` does not force `main`. It starts whatever branch is currently checked out.
+
+Create and test a branch:
+
+```powershell
+git switch -c my-test-branch
+start.bat
+```
+
+Return to main:
+
+```powershell
+stop-dailystox.bat
+git switch main
+start.bat
+```
+
+If a branch has no upstream remote, startup skips `git pull` and runs your local branch as-is.
 
 ## Repository setup
 
