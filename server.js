@@ -16,15 +16,15 @@ const MIME = {
   ".ico": "image/x-icon"
 };
 
-const RANGE_INTERVALS = {
-  "1d": "1m",
-  "5d": "5m",
-  "1m": "1d",
-  "6m": "1d",
-  "ytd": "1d",
-  "1y": "1d",
-  "3y": "1wk",
-  "5y": "1wk"
+const RANGE_CONFIG = {
+  "1d": { yahooRange: "1d", interval: "1m" },
+  "5d": { yahooRange: "5d", interval: "5m" },
+  "1m": { yahooRange: "1mo", interval: "1d" },
+  "6m": { yahooRange: "6mo", interval: "1d" },
+  "ytd": { yahooRange: "ytd", interval: "1d" },
+  "1y": { yahooRange: "1y", interval: "1d" },
+  "3y": { yahooRange: "5y", interval: "1wk", years: 3 },
+  "5y": { yahooRange: "5y", interval: "1wk" }
 };
 
 const INDEX_SYMBOLS = ["^DJI", "^IXIC", "^GSPC"];
@@ -115,7 +115,7 @@ function normalizeSymbol(symbol) {
 }
 
 function normalizeRange(range) {
-  return RANGE_INTERVALS[range] ? range : "1d";
+  return RANGE_CONFIG[range] ? range : "1d";
 }
 
 function splitSymbols(symbols) {
@@ -140,14 +140,14 @@ async function fetchQuotes(symbols) {
 }
 
 async function fetchChart(symbol, range) {
-  const interval = RANGE_INTERVALS[range];
-  const result = await fetchChartResult(symbol, range, interval);
-  const points = chartPoints(result);
+  const config = RANGE_CONFIG[range];
+  const result = await fetchChartResult(symbol, config.yahooRange, config.interval);
+  const points = limitChartPoints(chartPoints(result), config);
 
   return {
     symbol,
     range,
-    interval,
+    interval: config.interval,
     currency: result.meta && result.meta.currency,
     exchangeName: result.meta && result.meta.exchangeName,
     points
@@ -182,6 +182,8 @@ async function fetchChartQuote(symbol) {
       regularMarketDayHigh: finiteMarketNumber(meta.regularMarketDayHigh, highs.length ? Math.max(...highs) : price),
       regularMarketDayLow: finiteMarketNumber(meta.regularMarketDayLow, lows.length ? Math.min(...lows) : price),
       regularMarketVolume: finiteMarketNumber(meta.regularMarketVolume, volumes.reduce((sum, value) => sum + value, 0)),
+      fiftyTwoWeekHigh: finiteMarketNumber(meta.fiftyTwoWeekHigh, 0),
+      fiftyTwoWeekLow: finiteMarketNumber(meta.fiftyTwoWeekLow, 0),
       exchange: meta.exchangeName,
       currency: meta.currency
     };
@@ -213,6 +215,14 @@ function chartPoints(result) {
       volume: volume[index]
     }))
     .filter((point) => Number.isFinite(point.close));
+}
+
+function limitChartPoints(points, config) {
+  if (!config.years || !points.length) return points;
+  const latest = points[points.length - 1].time;
+  const cutoff = new Date(latest);
+  cutoff.setFullYear(cutoff.getFullYear() - config.years);
+  return points.filter((point) => point.time >= cutoff.getTime());
 }
 
 function finiteMarketNumber(primary, fallback) {
