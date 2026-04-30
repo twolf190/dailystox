@@ -28,6 +28,12 @@ git push -u origin main
 
 After that, `start.bat` will pull the latest changes before launching.
 
+## Local Node.js install
+
+If Windows cannot find Node.js 18 or newer, double-click `install-node-local.bat`.
+
+This downloads the official Windows x64 Node.js LTS zip into `.runtime/node`. It does not require admin rights and does not install Node globally.
+
 ## Notes
 
 - Requires Node.js 18 or newer.
