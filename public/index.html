@@ -62,7 +62,10 @@
           </div>
           <div class="range-tabs" id="rangeTabs" aria-label="Chart range"></div>
         </div>
-        <canvas id="chart" width="1200" height="560"></canvas>
+        <div class="chart-canvas-wrap">
+          <canvas id="chart" width="1200" height="560"></canvas>
+          <div id="chartTooltip" class="chart-tooltip" hidden></div>
+        </div>
         <div class="stats-grid" id="statsGrid"></div>
       </section>
     </main>

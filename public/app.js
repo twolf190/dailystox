@@ -7,7 +7,10 @@ const state = {
   quotes: new Map(),
   selected: null,
   range: "1d",
-  refreshing: false
+  refreshing: false,
+  chartPoints: [],
+  chartLayout: null,
+  hoverPoint: null
 };
 
 const els = {
@@ -24,6 +27,7 @@ const els = {
   chartMeta: document.querySelector("#chartMeta"),
   rangeTabs: document.querySelector("#rangeTabs"),
   chart: document.querySelector("#chart"),
+  chartTooltip: document.querySelector("#chartTooltip"),
   statsGrid: document.querySelector("#statsGrid")
 };
 
@@ -66,6 +70,8 @@ function bindEvents() {
   });
 
   els.refreshBtn.addEventListener("click", refreshAll);
+  els.chart.addEventListener("mousemove", handleChartHover);
+  els.chart.addEventListener("mouseleave", clearChartHover);
 }
 
 function buildRangeTabs() {
@@ -201,11 +207,14 @@ async function loadChart(symbol, range) {
   const quote = state.quotes.get(symbol) || {};
   els.chartTitle.textContent = `${symbol} ${labels[range]}`;
   els.chartMeta.textContent = quote.shortName || quote.longName || `${chartData.exchangeName || ""} ${chartData.currency || ""}`.trim();
-  drawChart(chartData.points || []);
+  state.chartPoints = chartData.points || [];
+  state.hoverPoint = null;
+  hideTooltip();
+  drawChart(state.chartPoints);
   renderStats(quote);
 }
 
-function drawChart(points) {
+function drawChart(points, hoverIndex = null) {
   const canvas = els.chart;
   const ratio = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
@@ -216,6 +225,7 @@ function drawChart(points) {
   const width = canvas.width / ratio;
   const height = canvas.height / ratio;
   const pad = { top: 22, right: 56, bottom: 34, left: 16 };
+  state.chartLayout = null;
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "#171c21";
   ctx.fillRect(0, 0, width, height);
@@ -235,6 +245,7 @@ function drawChart(points) {
   const first = closes[0];
   const last = closes[closes.length - 1];
   const stroke = last >= first ? "#33c47f" : "#ff5f6d";
+  state.chartLayout = { width, height, pad, plotW, plotH, min, max, span };
 
   ctx.strokeStyle = "#303840";
   ctx.lineWidth = 1;
@@ -279,6 +290,90 @@ function drawChart(points) {
   ctx.fillText(new Date(points[0].time).toLocaleDateString(), pad.left, height - 10);
   ctx.textAlign = "right";
   ctx.fillText(new Date(points[points.length - 1].time).toLocaleDateString(), width - pad.right, height - 10);
+
+  if (Number.isInteger(hoverIndex) && points[hoverIndex]) {
+    drawHoverPoint(points, hoverIndex, stroke);
+  }
+}
+
+function drawHoverPoint(points, index, stroke) {
+  const layout = state.chartLayout;
+  if (!layout) return;
+  const point = points[index];
+  const x = layout.pad.left + (layout.plotW * index) / (points.length - 1);
+  const y = layout.pad.top + layout.plotH - ((point.close - layout.min) / layout.span) * layout.plotH;
+
+  ctx.strokeStyle = "#f4f7f9";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, layout.pad.top);
+  ctx.lineTo(x, layout.height - layout.pad.bottom);
+  ctx.stroke();
+
+  ctx.fillStyle = stroke;
+  ctx.strokeStyle = "#f4f7f9";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(x, y, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+}
+
+function handleChartHover(event) {
+  const points = state.chartPoints;
+  const layout = state.chartLayout;
+  if (!points.length || !layout) return;
+
+  const rect = els.chart.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const minX = layout.pad.left;
+  const maxX = layout.width - layout.pad.right;
+  if (x < minX || x > maxX) {
+    clearChartHover();
+    return;
+  }
+
+  const index = Math.max(0, Math.min(points.length - 1, Math.round(((x - minX) / layout.plotW) * (points.length - 1))));
+  const point = points[index];
+  state.hoverPoint = point;
+  drawChart(points, index);
+  showTooltip(point, index, rect);
+}
+
+function clearChartHover() {
+  state.hoverPoint = null;
+  hideTooltip();
+  drawChart(state.chartPoints);
+}
+
+function showTooltip(point, index, rect) {
+  const layout = state.chartLayout;
+  if (!layout) return;
+
+  const x = layout.pad.left + (layout.plotW * index) / (state.chartPoints.length - 1);
+  const y = layout.pad.top + layout.plotH - ((point.close - layout.min) / layout.span) * layout.plotH;
+  const date = new Date(point.time);
+  const dateLabel = state.range === "1d" || state.range === "5d"
+    ? date.toLocaleString()
+    : date.toLocaleDateString();
+
+  els.chartTooltip.innerHTML = `
+    <strong>${money(point.close)}</strong>
+    <span>${dateLabel}</span>
+    <span>Volume ${compact(point.volume)}</span>
+  `;
+  els.chartTooltip.hidden = false;
+
+  const tooltipWidth = els.chartTooltip.offsetWidth;
+  const tooltipHeight = els.chartTooltip.offsetHeight;
+  const left = Math.max(8, Math.min(rect.width - tooltipWidth - 8, x + 14));
+  const top = Math.max(8, Math.min(rect.height - tooltipHeight - 8, y - tooltipHeight - 10));
+  els.chartTooltip.style.left = `${left}px`;
+  els.chartTooltip.style.top = `${top}px`;
+}
+
+function hideTooltip() {
+  els.chartTooltip.hidden = true;
 }
 
 function renderStats(quote) {
