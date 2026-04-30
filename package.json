@@ -1,0 +1,13 @@
+{
+  "name": "dailystox",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local stock and ETF tracking dashboard.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
