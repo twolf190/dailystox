@@ -235,7 +235,8 @@ async function fetchJson(url) {
 
 function serveStatic(urlPath, res) {
   const safePath = path.normalize(decodeURIComponent(urlPath)).replace(/^(\.\.[/\\])+/, "");
-  const requested = (safePath === "/" ? "index.html" : safePath).replace(/^[/\\]+/, "");
+  const requestedPath = safePath.replace(/^[/\\]+/, "");
+  const requested = requestedPath ? requestedPath : "index.html";
   const filePath = path.join(PUBLIC_DIR, requested);
   if (!filePath.startsWith(PUBLIC_DIR)) return sendText(res, "Forbidden", 403);
 
