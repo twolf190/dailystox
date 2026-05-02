@@ -1,0 +1,17 @@
+DailyStox Setup
+
+1. Right-click the DailyStox zip file.
+2. Click Extract All.
+3. Open the extracted DailyStox folder.
+4. Double-click install-node-local.bat one time.
+5. Double-click start.bat to open DailyStox.
+
+To stop DailyStox:
+Double-click stop-dailystox.bat.
+
+If something looks stuck:
+1. Double-click stop-dailystox.bat.
+2. Double-click start.bat.
+
+You do not need GitHub.
+You do not need to install Node.js manually.
