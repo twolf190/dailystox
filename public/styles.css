@@ -132,10 +132,11 @@ p {
 }
 
 .icon-button {
-  width: 38px;
+  min-width: 74px;
   height: 38px;
   border: 1px solid var(--line);
   border-radius: 8px;
+  padding: 0 12px;
   background: var(--panel-2);
   color: var(--text);
   cursor: pointer;
@@ -227,13 +228,20 @@ tr.selected {
 }
 
 .remove-btn {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255, 95, 109, 0.48);
   border-radius: 8px;
-  background: transparent;
-  color: var(--muted);
-  min-width: 34px;
+  background: rgba(255, 95, 109, 0.08);
+  color: var(--red);
+  min-width: 64px;
   min-height: 30px;
+  padding: 0 10px;
   cursor: pointer;
+  font-weight: 700;
+}
+
+.remove-btn:hover {
+  background: rgba(255, 95, 109, 0.16);
+  color: #ffb6be;
 }
 
 .chart-panel {
