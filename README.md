@@ -61,6 +61,19 @@ If Windows cannot find Node.js 18 or newer, double-click `install-node-local.bat
 
 This downloads the official Windows x64 Node.js LTS zip into `.runtime/node`. It does not require admin rights and does not install Node globally.
 
+## Build a Shareable Zip
+
+Double-click `build-release.bat`.
+
+It creates:
+
+```text
+release/DailyStox/
+release/DailyStox.zip
+```
+
+Send `release/DailyStox.zip` to first-time users. It excludes development files like `.git`, `.runtime`, logs, and your local watchlist data.
+
 ## Notes
 
 - Requires Node.js 18 or newer.
