@@ -160,6 +160,7 @@ function renderWatchlist() {
 
   if (!state.items.length) {
     els.watchRows.innerHTML = `<tr><td colspan="8">Add a ticker to start tracking.</td></tr>`;
+    clearChartState();
   }
 
   for (const item of state.items) {
@@ -180,19 +181,16 @@ function renderWatchlist() {
       <td>${compact(item.shares)}</td>
       <td>${money(value)}</td>
       <td>${compact(quote.regularMarketVolume)}</td>
-      <td><button class="remove-btn" title="Remove ${item.symbol}" aria-label="Remove ${item.symbol}">&times;</button></td>
+      <td><button class="remove-btn" type="button" title="Delete ${item.symbol}" aria-label="Delete ${item.symbol}">Delete</button></td>
     `;
     row.addEventListener("click", () => {
       state.selected = item.symbol;
       renderWatchlist();
       loadChart(item.symbol, state.range);
     });
-    row.querySelector("button").addEventListener("click", async (event) => {
+    row.querySelector(".remove-btn").addEventListener("click", async (event) => {
       event.stopPropagation();
-      state.items = state.items.filter((entry) => entry.symbol !== item.symbol);
-      if (state.selected === item.symbol) state.selected = state.items[0] && state.items[0].symbol;
-      await saveWatchlist();
-      await refreshAll();
+      await deleteStock(item.symbol);
     });
     els.watchRows.appendChild(row);
   }
@@ -200,6 +198,40 @@ function renderWatchlist() {
   const previousValue = totalValue - totalDayGain;
   const dayPct = previousValue ? (totalDayGain / previousValue) * 100 : 0;
   els.portfolioSummary.innerHTML = `${money(totalValue)} total value <span class="${tone(totalDayGain)}">${signed(totalDayGain)} (${signed(dayPct)}%) today</span>`;
+}
+
+async function deleteStock(symbol) {
+  if (!window.confirm(`Delete ${symbol} from your watchlist?`)) return;
+
+  state.items = state.items.filter((entry) => entry.symbol !== symbol);
+  state.quotes.delete(symbol);
+
+  if (state.selected === symbol) {
+    state.selected = state.items[0] && state.items[0].symbol;
+  }
+
+  await saveWatchlist();
+
+  if (!state.items.length) {
+    renderWatchlist();
+    clearChartState();
+    els.status.textContent = "Watchlist is empty.";
+    return;
+  }
+
+  await refreshAll();
+}
+
+function clearChartState() {
+  state.selected = state.items[0] && state.items[0].symbol;
+  state.chartPoints = [];
+  state.chartLayout = null;
+  state.hoverPoint = null;
+  hideTooltip();
+  els.chartTitle.textContent = state.selected ? `${state.selected} ${labels[state.range]}` : "Select a ticker";
+  els.chartMeta.textContent = state.selected ? "Chart data appears here." : "Add a ticker to show chart data.";
+  drawChart([]);
+  els.statsGrid.innerHTML = "";
 }
 
 async function loadChart(symbol, range) {
