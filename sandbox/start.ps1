@@ -1,5 +1,14 @@
 $ErrorActionPreference = "Stop"
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+# In the dev repo this script lives in sandbox/, one level below the project
+# root. In a shipped release zip (see build-release.ps1) it sits alongside
+# server.js at the package root instead. Detect which layout applies so the
+# script works from either location.
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path (Join-Path $scriptDir "server.js")) {
+  $root = $scriptDir
+} else {
+  $root = Split-Path -Parent $scriptDir
+}
 Set-Location $root
 
 $runtimeDir = Join-Path $root ".runtime"

@@ -1,4 +1,5 @@
 node_modules/
 .runtime/
+release/
 data/*.json
 *.log

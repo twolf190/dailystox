@@ -1,5 +1,12 @@
 $ErrorActionPreference = "Stop"
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+# See start.ps1 for why this detects the dev (sandbox/) vs. shipped-release
+# (package root) layout instead of assuming one fixed location.
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path (Join-Path $scriptDir "server.js")) {
+  $root = $scriptDir
+} else {
+  $root = Split-Path -Parent $scriptDir
+}
 $runtimeDir = Join-Path $root ".runtime"
 $nodeVersion = "v24.15.0"
 $zipName = "node-$nodeVersion-win-x64.zip"
