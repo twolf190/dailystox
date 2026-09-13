@@ -11,7 +11,7 @@
 const { next } = require("@vercel/functions");
 
 const SESSION_COOKIE = "sb-access-token";
-const PUBLIC_PATHS = new Set(["/login.html", "/supabase-config.js"]);
+const PUBLIC_PATHS = new Set(["/login.html", "/supabase-config.js", "/auth-client.js"]);
 
 module.exports = async function middleware(request) {
   const url = new URL(request.url);
