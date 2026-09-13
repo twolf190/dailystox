@@ -37,21 +37,6 @@ if (-not $nodeCommand) {
   exit 1
 }
 
-if (Test-Path ".git") {
-  $branch = git rev-parse --abbrev-ref HEAD
-  Write-Host "Current git branch: $branch"
-
-  $upstream = git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>$null
-  if ($LASTEXITCODE -eq 0 -and $upstream) {
-    Write-Host "Pulling latest changes for $branch from $upstream..."
-    git pull --ff-only
-  } else {
-    Write-Host "No upstream configured for $branch. Skipping git pull."
-  }
-} else {
-  Write-Host "No git repository found yet. Starting local app without pulling."
-}
-
 $url = "http://localhost:5177"
 Write-Host "Starting DailyStox at $url"
 New-Item -ItemType Directory -Force -Path $runtimeDir | Out-Null
