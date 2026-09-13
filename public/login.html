@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DailyStox - Sign in</title>
+    <style>
+      :root { color-scheme: dark; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #12161a;
+        color: #f4f7f9;
+        font: 15px system-ui, sans-serif;
+      }
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 260px;
+        padding: 28px;
+        background: #171c21;
+        border: 1px solid #262d34;
+        border-radius: 12px;
+      }
+      h1 { margin: 0 0 4px; font-size: 20px; }
+      input {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #303840;
+        background: #0f1215;
+        color: inherit;
+        font-size: 14px;
+      }
+      button {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: none;
+        background: #33c47f;
+        color: #0f1215;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #error { color: #ff5f6d; min-height: 1.2em; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <form id="loginForm">
+      <h1>DailyStox</h1>
+      <input id="email" type="email" placeholder="Email" autocomplete="username" required autofocus>
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
+      <p id="error"></p>
+      <button type="submit">Sign in</button>
+    </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+    <script src="/supabase-config.js"></script>
+    <script src="/auth-client.js"></script>
+    <script>
+      const form = document.querySelector("#loginForm");
+      const errorEl = document.querySelector("#error");
+      const redirectTo = new URLSearchParams(location.search).get("next") || "/";
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        errorEl.textContent = "";
+        const email = document.querySelector("#email").value;
+        const password = document.querySelector("#password").value;
+
+        const { data, error } = await authClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          errorEl.textContent = error.message;
+          return;
+        }
+        syncSessionCookie(data.session);
+        location.href = redirectTo;
+      });
+    </script>
+  </body>
+</html>

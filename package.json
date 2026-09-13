@@ -9,5 +9,9 @@
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.116.0",
+    "@vercel/functions": "^3.9.7"
   }
 }
