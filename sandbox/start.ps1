@@ -1,5 +1,14 @@
 $ErrorActionPreference = "Stop"
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+# In the dev repo this script lives in sandbox/, one level below the project
+# root. In a shipped release zip (see build-release.ps1) it sits alongside
+# server.js at the package root instead. Detect which layout applies so the
+# script works from either location.
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path (Join-Path $scriptDir "server.js")) {
+  $root = $scriptDir
+} else {
+  $root = Split-Path -Parent $scriptDir
+}
 Set-Location $root
 
 $runtimeDir = Join-Path $root ".runtime"
@@ -26,21 +35,6 @@ if (-not $nodeCommand) {
   Write-Host "Run install-node-local.ps1 or install Node from https://nodejs.org/ and run this script again."
   Read-Host "Press Enter to close"
   exit 1
-}
-
-if (Test-Path ".git") {
-  $branch = git rev-parse --abbrev-ref HEAD
-  Write-Host "Current git branch: $branch"
-
-  $upstream = git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>$null
-  if ($LASTEXITCODE -eq 0 -and $upstream) {
-    Write-Host "Pulling latest changes for $branch from $upstream..."
-    git pull --ff-only
-  } else {
-    Write-Host "No upstream configured for $branch. Skipping git pull."
-  }
-} else {
-  Write-Host "No git repository found yet. Starting local app without pulling."
 }
 
 $url = "http://localhost:5177"

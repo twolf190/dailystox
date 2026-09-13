@@ -1,6 +1,7 @@
 $ErrorActionPreference = "Stop"
 
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$root = Split-Path -Parent $scriptDir
 $releaseRoot = Join-Path $root "release"
 $packageDir = Join-Path $releaseRoot "DailyStox"
 $zipPath = Join-Path $releaseRoot "DailyStox.zip"
@@ -17,20 +18,34 @@ if (Test-Path $zipPath) {
 
 New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
 
-$files = @(
+# Files copied from the project root, kept at the root of the shipped package.
+$rootFiles = @(
   "package.json",
   "server.js",
+  "RELEASE_INSTRUCTIONS.txt"
+)
+
+foreach ($file in $rootFiles) {
+  $source = Join-Path $root $file
+  if (-not (Test-Path $source)) {
+    throw "Missing required release file: $file"
+  }
+  Copy-Item -LiteralPath $source -Destination $packageDir
+}
+
+# Local-run scripts live in sandbox/ during development, but end users still
+# get them at the top level of the extracted package for double-click use.
+$sandboxFiles = @(
   "start.bat",
   "start.ps1",
   "stop-dailystox.bat",
   "stop-dailystox.ps1",
   "install-node-local.bat",
-  "install-node-local.ps1",
-  "RELEASE_INSTRUCTIONS.txt"
+  "install-node-local.ps1"
 )
 
-foreach ($file in $files) {
-  $source = Join-Path $root $file
+foreach ($file in $sandboxFiles) {
+  $source = Join-Path $scriptDir $file
   if (-not (Test-Path $source)) {
     throw "Missing required release file: $file"
   }

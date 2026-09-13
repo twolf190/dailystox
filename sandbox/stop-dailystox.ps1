@@ -1,5 +1,12 @@
 $ErrorActionPreference = "SilentlyContinue"
-$root = Split-Path -Parent $MyInvocation.MyCommand.Path
+# See start.ps1 for why this detects the dev (sandbox/) vs. shipped-release
+# (package root) layout instead of assuming one fixed location.
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (Test-Path (Join-Path $scriptDir "server.js")) {
+  $root = $scriptDir
+} else {
+  $root = Split-Path -Parent $scriptDir
+}
 $pidFile = Join-Path $root ".runtime\dailystox.pid"
 
 Set-Location $root
