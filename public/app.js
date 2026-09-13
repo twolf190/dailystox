@@ -22,6 +22,7 @@ const els = {
   sharesInput: document.querySelector("#sharesInput"),
   costInput: document.querySelector("#costInput"),
   refreshBtn: document.querySelector("#refreshBtn"),
+  signOutBtn: document.querySelector("#signOutBtn"),
   watchRows: document.querySelector("#watchRows"),
   chartTitle: document.querySelector("#chartTitle"),
   chartMeta: document.querySelector("#chartMeta"),
@@ -70,6 +71,7 @@ function bindEvents() {
   });
 
   els.refreshBtn.addEventListener("click", refreshAll);
+  els.signOutBtn.addEventListener("click", signOutAndRedirect);
   els.chart.addEventListener("mousemove", handleChartHover);
   els.chart.addEventListener("mouseleave", clearChartHover);
 }
@@ -100,7 +102,7 @@ async function loadWatchlist() {
 async function saveWatchlist() {
   const response = await fetch("/api/watchlist", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     body: JSON.stringify({ items: state.items })
   });
   if (response.status === 401) return redirectToLogin();
@@ -427,11 +429,16 @@ function renderStats(quote) {
 }
 
 async function getJson(url) {
-  const response = await fetch(url);
+  const response = await fetch(url, { headers: await authHeaders() });
   if (response.status === 401) return redirectToLogin();
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || "Request failed.");
   return data;
+}
+
+async function authHeaders() {
+  const token = await getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 function redirectToLogin() {

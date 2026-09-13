@@ -1,4 +1,5 @@
 const { getSupabase } = require("../lib/supabase");
+const { requireUser } = require("../lib/verifyUser");
 
 const TABLE = "watchlist_state";
 const ROW_ID = "default";
@@ -6,6 +7,7 @@ const ROW_ID = "default";
 module.exports = {
   fetch: async function (request) {
     try {
+      if (!(await requireUser(request))) return json({ error: "Unauthorized" }, 401);
       if (request.method === "GET") return json({ items: await readWatchlist() });
       if (request.method === "POST") return handlePost(request);
       return new Response("Method Not Allowed", { status: 405 });

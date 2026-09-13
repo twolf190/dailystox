@@ -1,18 +1,21 @@
--- Run this once in the Supabase SQL editor (Project > SQL Editor > New query)
--- for the DailyStox project. It creates the single table the app uses to
--- store the watchlist, replacing the local data/watchlist.json file.
+-- Run once in the Supabase SQL editor (Project > SQL Editor > New query).
+-- Creates the single table the app uses to store the watchlist, replacing
+-- the local data/watchlist.json file.
 
-create table if not exists watchlist_state (
+create table watchlist_state (
   id text primary key,
   items jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now()
 );
 
--- Seed the one row the app reads/writes (id = 'default').
-insert into watchlist_state (id, items)
-values ('default', '[]'::jsonb)
-on conflict (id) do nothing;
+-- RLS is on with no policies, so every role except service_role is denied
+-- outright. This matters because the app's browser code carries the public
+-- anon key (public/supabase-config.js) — without RLS, anyone who copied
+-- that key could read/write this table directly via Supabase's REST API,
+-- skipping our app, middleware, and login entirely. The app's own API
+-- functions still work fine: they use the service_role key from a trusted
+-- server, which always bypasses RLS.
+alter table watchlist_state enable row level security;
 
--- Row Level Security stays off: the app talks to Supabase using the
--- service role key from a trusted server (Vercel function), which bypasses
--- RLS anyway, and the app itself is gated by the password in middleware.js.
+-- Seed the one row the app reads/writes.
+insert into watchlist_state (id, items) values ('default', '[]'::jsonb);

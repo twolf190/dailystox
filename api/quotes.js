@@ -1,9 +1,11 @@
 const { fetchQuotes, normalizeSymbol } = require("../lib/market");
+const { requireUser } = require("../lib/verifyUser");
 
 module.exports = {
   fetch: async function (request) {
     if (request.method !== "GET") return new Response("Method Not Allowed", { status: 405 });
     try {
+      if (!(await requireUser(request))) return json({ error: "Unauthorized" }, 401);
       const url = new URL(request.url);
       const symbols = splitSymbols(url.searchParams.get("symbols"));
       const data = await fetchQuotes(symbols);

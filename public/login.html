@@ -50,10 +50,15 @@
   <body>
     <form id="loginForm">
       <h1>DailyStox</h1>
-      <input id="password" type="password" placeholder="Password" autocomplete="current-password" required autofocus>
+      <input id="email" type="email" placeholder="Email" autocomplete="username" required autofocus>
+      <input id="password" type="password" placeholder="Password" autocomplete="current-password" required>
       <p id="error"></p>
       <button type="submit">Sign in</button>
     </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+    <script src="/supabase-config.js"></script>
+    <script src="/auth-client.js"></script>
     <script>
       const form = document.querySelector("#loginForm");
       const errorEl = document.querySelector("#error");
@@ -62,18 +67,16 @@
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
         errorEl.textContent = "";
+        const email = document.querySelector("#email").value;
         const password = document.querySelector("#password").value;
-        const response = await fetch("/api/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password })
-        });
-        if (response.ok) {
-          location.href = redirectTo;
+
+        const { data, error } = await authClient.auth.signInWithPassword({ email, password });
+        if (error) {
+          errorEl.textContent = error.message;
           return;
         }
-        const data = await response.json().catch(() => ({}));
-        errorEl.textContent = data.error || "Sign in failed.";
+        syncSessionCookie(data.session);
+        location.href = redirectTo;
       });
     </script>
   </body>
