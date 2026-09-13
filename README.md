@@ -1,8 +1,10 @@
 # DailyStox
 
-A local stock and ETF dashboard that runs at `http://localhost:5177`.
+A stock and ETF dashboard, deployed to Vercel with Supabase as the database.
+See [Deploying](#deploying) below.
 
-Local-run scripts (start/stop/install-node/build-release) live in [sandbox/](sandbox/).
+Local-run scripts (start/stop/install-node/build-release) live in [sandbox/](sandbox/)
+— these are just a throwaway local test env, not how the app is distributed.
 
 ## One-click startup
 
@@ -42,6 +44,44 @@ Send `release/DailyStox.zip` to first-time users. It excludes development files 
 ## Notes
 
 - Requires Node.js 18 or newer.
-- Watchlist data is saved in `data/watchlist.json`.
+- Local-run watchlist data is saved in `data/watchlist.json` (Vercel uses Supabase instead — see below).
 - Market data is fetched from Yahoo Finance's public endpoints when the app is running.
 - Quotes refresh every 15 seconds. Exchange delays and endpoint availability depend on Yahoo Finance.
+
+## Deploying
+
+The live deployment is Vercel (static files + serverless functions in `api/`)
+with Supabase as the database, gated by a single shared password since it's
+running on free tiers. Local `server.js` is unrelated to this — it's just the
+throwaway sandbox and has no auth.
+
+### 1. Supabase
+
+1. Open your Supabase project's **SQL Editor** and run [supabase/schema.sql](supabase/schema.sql).
+2. Go to **Project Settings > API** and copy the **Project URL** and the
+   **service_role** secret key (not the `anon` key — the API functions use
+   the service role key since they run server-side).
+
+### 2. Vercel
+
+1. Import this repo into Vercel (framework preset: **Other**; no build command needed).
+2. In **Project Settings > Environment Variables**, add:
+   | Name | Value |
+   |---|---|
+   | `SUPABASE_URL` | the Project URL from above |
+   | `SUPABASE_SERVICE_ROLE_KEY` | the service_role key from above |
+   | `SITE_PASSWORD` | the password you'll use to sign in |
+   | `AUTH_SECRET` | a random string — generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+3. Deploy. Visit the deployment URL — you'll land on `/login.html`; sign in
+   with `SITE_PASSWORD`.
+
+See [.env.example](.env.example) for the same variables if you want to test
+against Supabase locally instead of running plain `server.js`.
+
+### How the auth works
+
+`middleware.js` runs on every request (pages and `/api/*` alike) and checks
+for a signed session cookie. `POST /api/login` checks the password against
+`SITE_PASSWORD` and sets that cookie; anything else without it gets redirected
+to `/login.html` (or a 401 for API calls). There's one shared password, not
+per-user accounts — change `SITE_PASSWORD` in Vercel and redeploy to rotate it.

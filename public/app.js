@@ -98,11 +98,12 @@ async function loadWatchlist() {
 }
 
 async function saveWatchlist() {
-  await fetch("/api/watchlist", {
+  const response = await fetch("/api/watchlist", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ items: state.items })
   });
+  if (response.status === 401) return redirectToLogin();
 }
 
 async function refreshAll() {
@@ -427,9 +428,15 @@ function renderStats(quote) {
 
 async function getJson(url) {
   const response = await fetch(url);
+  if (response.status === 401) return redirectToLogin();
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || "Request failed.");
   return data;
+}
+
+function redirectToLogin() {
+  location.href = `/login.html?next=${encodeURIComponent(location.pathname)}`;
+  return new Promise(() => {}); // stop the caller; navigation is already underway
 }
 
 function cleanSymbol(value) {
