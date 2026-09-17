@@ -17,5 +17,12 @@ create table watchlist_state (
 -- server, which always bypasses RLS.
 alter table watchlist_state enable row level security;
 
+-- RLS alone isn't enough: Postgres also has a separate GRANT system, and a
+-- table created via the SQL editor (unlike Supabase's Table Editor UI) isn't
+-- automatically granted to service_role. Without this, every request from
+-- our API functions fails with "permission denied for table watchlist_state"
+-- even though service_role bypasses RLS.
+grant select, insert, update on public.watchlist_state to service_role;
+
 -- Seed the one row the app reads/writes.
 insert into watchlist_state (id, items) values ('default', '[]'::jsonb);
