@@ -1,9 +1,9 @@
 -- Run once in the Supabase SQL editor (Project > SQL Editor > New query).
--- Creates the single table the app uses to store the watchlist, replacing
+-- Creates the table the app uses to store each user's watchlist, replacing
 -- the local data/watchlist.json file.
 
 create table watchlist_state (
-  id text primary key,
+  id text primary key, -- the signed-in Supabase user's id (auth.users.id)
   items jsonb not null default '[]'::jsonb,
   updated_at timestamptz not null default now()
 );
@@ -24,5 +24,5 @@ alter table watchlist_state enable row level security;
 -- even though service_role bypasses RLS.
 grant select, insert, update on public.watchlist_state to service_role;
 
--- Seed the one row the app reads/writes.
-insert into watchlist_state (id, items) values ('default', '[]'::jsonb);
+-- No seed row: each user's row is created automatically (upsert) the first
+-- time they save a watchlist, keyed by their own user id.

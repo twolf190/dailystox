@@ -2,14 +2,14 @@ const { getSupabase } = require("../lib/supabase");
 const { requireUser } = require("../lib/verifyUser");
 
 const TABLE = "watchlist_state";
-const ROW_ID = "default";
 
 module.exports = {
   fetch: async function (request) {
     try {
-      if (!(await requireUser(request))) return json({ error: "Unauthorized" }, 401);
-      if (request.method === "GET") return json({ items: await readWatchlist() });
-      if (request.method === "POST") return handlePost(request);
+      const user = await requireUser(request);
+      if (!user) return json({ error: "Unauthorized" }, 401);
+      if (request.method === "GET") return json({ items: await readWatchlist(user.id) });
+      if (request.method === "POST") return handlePost(request, user.id);
       return new Response("Method Not Allowed", { status: 405 });
     } catch (error) {
       return json({ error: error.message || "Unexpected server error." }, 500);
@@ -17,7 +17,7 @@ module.exports = {
   }
 };
 
-async function handlePost(request) {
+async function handlePost(request, userId) {
   let body;
   try {
     body = await request.json();
@@ -25,20 +25,20 @@ async function handlePost(request) {
     body = {};
   }
   const items = Array.isArray(body.items) ? body.items.map(cleanItem).filter(Boolean) : [];
-  await writeWatchlist(items);
+  await writeWatchlist(userId, items);
   return json({ items });
 }
 
-async function readWatchlist() {
+async function readWatchlist(userId) {
   const supabase = getSupabase();
-  const { data, error } = await supabase.from(TABLE).select("items").eq("id", ROW_ID).maybeSingle();
+  const { data, error } = await supabase.from(TABLE).select("items").eq("id", userId).maybeSingle();
   if (error) throw error;
   return Array.isArray(data && data.items) ? data.items : [];
 }
 
-async function writeWatchlist(items) {
+async function writeWatchlist(userId, items) {
   const supabase = getSupabase();
-  const { error } = await supabase.from(TABLE).upsert({ id: ROW_ID, items, updated_at: new Date().toISOString() });
+  const { error } = await supabase.from(TABLE).upsert({ id: userId, items, updated_at: new Date().toISOString() });
   if (error) throw error;
 }
 
