@@ -96,4 +96,6 @@ all. The real check happens per-request in each API function
 returning any data — that's the actual security boundary, not the cookie.
 Because public sign-ups are off, the only way to get an account is you adding
 one in the Supabase dashboard, which is also how you'd add a second person
-later.
+later. Each user's watchlist is private — `watchlist_state` is keyed by
+Supabase user id, so a second account starts with its own empty watchlist,
+not yours.
