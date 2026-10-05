@@ -6,4 +6,3 @@ data/*.json
 .env
 .env.local
 .vercel
-CLAUDE.md
