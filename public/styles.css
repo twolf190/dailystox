@@ -287,12 +287,12 @@ tr:hover {
 .chart-modal-panel.chart-panel {
   width: min(760px, 100%);
   max-height: 86vh;
-  grid-template-rows: auto minmax(240px, 1fr) auto;
+  grid-template-rows: auto 260px auto;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
 }
 
 .chart-modal-panel .chart-canvas-wrap {
-  min-height: 240px;
+  height: 260px;
 }
 
 .modal-controls {
@@ -325,11 +325,10 @@ tr:hover {
   border-color: var(--blue);
 }
 
-#chart {
+.chart-canvas {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 320px;
   padding: 10px;
   cursor: crosshair;
 }
