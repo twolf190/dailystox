@@ -107,10 +107,23 @@ p {
 }
 
 .layout {
-  display: grid;
-  grid-template-columns: minmax(520px, 1fr) minmax(420px, 0.9fr);
-  gap: 18px;
   padding: 18px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.symbol-switch select {
+  min-height: 38px;
+  min-width: 120px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: var(--panel-2);
+  color: var(--text);
 }
 
 .portfolio-panel,
@@ -132,6 +145,9 @@ p {
 }
 
 .icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 74px;
   height: 38px;
   border: 1px solid var(--line);
@@ -139,6 +155,7 @@ p {
   padding: 0 12px;
   background: var(--panel-2);
   color: var(--text);
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -206,8 +223,7 @@ tr {
   cursor: pointer;
 }
 
-tr:hover,
-tr.selected {
+tr:hover {
   background: #202832;
 }
 
@@ -337,18 +353,13 @@ tr.selected {
 }
 
 @media (max-width: 1120px) {
-  .topbar,
-  .layout {
+  .topbar {
     display: block;
   }
 
   .index-strip {
     margin-top: 14px;
     width: 100%;
-  }
-
-  .portfolio-panel {
-    margin-bottom: 18px;
   }
 }
 

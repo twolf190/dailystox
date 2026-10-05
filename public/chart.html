@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DailyStox — Chart</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="mark">DS</span>
+        <div>
+          <h1>DailyStox</h1>
+          <p id="status">Chart view</p>
+        </div>
+      </div>
+      <div class="symbol-switch" id="symbolSwitch"></div>
+      <div class="header-actions">
+        <a href="/" class="icon-button">&larr; Dashboard</a>
+        <button id="signOutBtn" class="icon-button" type="button">Sign out</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="chart-panel">
+        <div class="chart-head">
+          <div>
+            <h2 id="chartTitle">Select a ticker</h2>
+            <p id="chartMeta">Chart data appears here.</p>
+          </div>
+          <div class="range-tabs" id="rangeTabs" aria-label="Chart range"></div>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="chart" width="1200" height="560"></canvas>
+          <div id="chartTooltip" class="chart-tooltip" hidden></div>
+        </div>
+        <div class="stats-grid" id="statsGrid"></div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+    <script src="/supabase-config.js"></script>
+    <script src="/auth-client.js"></script>
+    <script src="/chart.js"></script>
+  </body>
+</html>
