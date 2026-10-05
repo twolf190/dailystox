@@ -1,9 +1,13 @@
 const indexNames = { "^DJI": "Dow", "^IXIC": "Nasdaq", "^GSPC": "S&P 500" };
+const ranges = ["1d", "5d", "1m", "6m", "ytd", "1y", "3y", "5y"];
+const labels = { "1d": "1D", "5d": "5D", "1m": "1M", "6m": "6M", ytd: "YTD", "1y": "1YR", "3y": "3YR", "5y": "5YR" };
 
 const state = {
   items: [],
   quotes: new Map(),
-  refreshing: false
+  refreshing: false,
+  modalSymbol: null,
+  modalRange: "1d"
 };
 
 const els = {
@@ -16,8 +20,22 @@ const els = {
   costInput: document.querySelector("#costInput"),
   refreshBtn: document.querySelector("#refreshBtn"),
   signOutBtn: document.querySelector("#signOutBtn"),
-  watchRows: document.querySelector("#watchRows")
+  watchRows: document.querySelector("#watchRows"),
+  chartModal: document.querySelector("#chartModal"),
+  chartModalPanel: document.querySelector("#chartModalPanel"),
+  modalChartTitle: document.querySelector("#modalChartTitle"),
+  modalChartMeta: document.querySelector("#modalChartMeta"),
+  modalRangeTabs: document.querySelector("#modalRangeTabs"),
+  modalExpandBtn: document.querySelector("#modalExpandBtn"),
+  modalCloseBtn: document.querySelector("#modalCloseBtn"),
+  modalChart: document.querySelector("#modalChart"),
+  modalChartTooltip: document.querySelector("#modalChartTooltip"),
+  modalStatsGrid: document.querySelector("#modalStatsGrid")
 };
+
+const modalRenderer = createChartRenderer(els.modalChart, els.modalChartTooltip, {
+  isIntraday: () => state.modalRange === "1d" || state.modalRange === "5d"
+});
 
 init();
 
@@ -52,6 +70,14 @@ function bindEvents() {
 
   els.refreshBtn.addEventListener("click", refreshAll);
   els.signOutBtn.addEventListener("click", signOutAndRedirect);
+
+  els.modalCloseBtn.addEventListener("click", closeChartModal);
+  els.chartModal.addEventListener("click", (event) => {
+    if (event.target === els.chartModal) closeChartModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !els.chartModal.hidden) closeChartModal();
+  });
 }
 
 async function loadWatchlist() {
@@ -145,9 +171,7 @@ function renderWatchlist() {
       <td>${compact(quote.regularMarketVolume)}</td>
       <td><button class="remove-btn" type="button" title="Delete ${item.symbol}" aria-label="Delete ${item.symbol}">Delete</button></td>
     `;
-    row.addEventListener("click", () => {
-      location.href = `/chart.html?symbol=${encodeURIComponent(item.symbol)}`;
-    });
+    row.addEventListener("click", () => openChartModal(item.symbol));
     row.querySelector(".remove-btn").addEventListener("click", async (event) => {
       event.stopPropagation();
       await deleteStock(item.symbol);
@@ -177,26 +201,59 @@ async function deleteStock(symbol) {
   await refreshAll();
 }
 
-async function getJson(url) {
-  const response = await fetch(url, { headers: await authHeaders() });
-  if (response.status === 401) return redirectToLogin();
-  const data = await response.json();
-  if (!response.ok) throw new Error(data.error || "Request failed.");
-  return data;
+function openChartModal(symbol) {
+  state.modalSymbol = symbol;
+  state.modalRange = "1d";
+  els.chartModal.hidden = false;
+  buildModalRangeTabs();
+  loadModalChart();
 }
 
-async function authHeaders() {
-  const token = await getAccessToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+function closeChartModal() {
+  els.chartModal.hidden = true;
 }
 
-function redirectToLogin() {
-  location.href = `/login.html?next=${encodeURIComponent(location.pathname)}`;
-  return new Promise(() => {}); // stop the caller; navigation is already underway
+function buildModalRangeTabs() {
+  els.modalRangeTabs.innerHTML = "";
+  for (const range of ranges) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = labels[range];
+    button.className = range === state.modalRange ? "active" : "";
+    button.addEventListener("click", () => {
+      state.modalRange = range;
+      buildModalRangeTabs();
+      loadModalChart();
+    });
+    els.modalRangeTabs.appendChild(button);
+  }
 }
 
-function cleanSymbol(value) {
-  return String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+async function loadModalChart() {
+  const symbol = state.modalSymbol;
+  const range = state.modalRange;
+  const quote = state.quotes.get(symbol) || {};
+
+  els.modalChartTitle.textContent = `${symbol} ${labels[range]}`;
+  els.modalChartMeta.textContent = quote.shortName || quote.longName || "Loading chart data...";
+  els.modalExpandBtn.href = `/chart.html?symbol=${encodeURIComponent(symbol)}&range=${range}`;
+
+  const chartData = await getJson(`/api/chart?symbol=${encodeURIComponent(symbol)}&range=${range}`);
+  if (state.modalSymbol !== symbol || state.modalRange !== range) return; // superseded by a newer selection
+
+  els.modalChartMeta.textContent = quote.shortName || quote.longName || `${chartData.exchangeName || ""} ${chartData.currency || ""}`.trim();
+  modalRenderer.setPoints(chartData.points || []);
+  renderModalStats(quote);
+}
+
+function renderModalStats(quote) {
+  const stats = [
+    ["Open", money(quote.regularMarketOpen)],
+    ["Day Range", `${money(quote.regularMarketDayLow)} - ${money(quote.regularMarketDayHigh)}`],
+    ["52 Week Range", `${money(quote.fiftyTwoWeekLow)} - ${money(quote.fiftyTwoWeekHigh)}`],
+    ["Avg Volume", compact(quote.averageDailyVolume3Month)]
+  ];
+  els.modalStatsGrid.innerHTML = stats.map(([label, value]) => `<div class="stat"><span>${label}</span><strong>${value}</strong></div>`).join("");
 }
 
 function numberOrZero(value) {
@@ -207,27 +264,4 @@ function numberOrZero(value) {
 function numberOrDefault(value, fallback) {
   const num = Number(value);
   return Number.isFinite(num) && num > 0 ? num : fallback;
-}
-
-function money(value, fallback = "$0.00") {
-  if (!Number.isFinite(Number(value))) return fallback;
-  return Number(value).toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 2 });
-}
-
-function signed(value) {
-  if (!Number.isFinite(Number(value))) return "0.00";
-  const num = Number(value);
-  return `${num > 0 ? "+" : ""}${num.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
-}
-
-function compact(value) {
-  if (!Number.isFinite(Number(value))) return "0";
-  return Number(value).toLocaleString(undefined, { notation: "compact", maximumFractionDigits: 2 });
-}
-
-function tone(value) {
-  const num = Number(value);
-  if (num > 0) return "positive";
-  if (num < 0) return "negative";
-  return "";
 }

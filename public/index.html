@@ -56,9 +56,32 @@
       </section>
     </main>
 
+    <div class="chart-modal" id="chartModal" hidden>
+      <div class="chart-panel chart-modal-panel" id="chartModalPanel">
+        <div class="chart-head">
+          <div>
+            <h2 id="modalChartTitle">Select a ticker</h2>
+            <p id="modalChartMeta">Chart data appears here.</p>
+          </div>
+          <div class="modal-controls">
+            <div class="range-tabs" id="modalRangeTabs" aria-label="Chart range"></div>
+            <a id="modalExpandBtn" class="icon-button" href="#">Full screen</a>
+            <button id="modalCloseBtn" class="icon-button" type="button" aria-label="Close chart">Close</button>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="modalChart"></canvas>
+          <div id="modalChartTooltip" class="chart-tooltip" hidden></div>
+        </div>
+        <div class="stats-grid" id="modalStatsGrid"></div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
     <script src="/supabase-config.js"></script>
     <script src="/auth-client.js"></script>
+    <script src="/shared.js"></script>
+    <script src="/chart-render.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>
